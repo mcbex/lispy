@@ -169,6 +169,39 @@ lval* lval_take(lval* v, int i) {
   return x;
 }
 
+lval* lval_len(lval* a) {
+  int count = 0;
+
+  if (a->type != LVAL_SEXPR && a->type != LVAL_QEXPR) {
+    // only s and q expr have children
+    count += 1;
+  } else {
+    int c = a->count;
+    for (int i = 0; i < c; i++) {
+      lval* b = lval_len(lval_pop(a, 0));
+      count += b->num;
+      lval_del(b);
+      printf("%i\n", a->count);
+    }
+  }
+
+  lval_del(a);
+
+  return lval_num(count);
+}
+
+lval* builtin_len(lval* a) {
+  LASSERT(a, a->count == 1, "Function 'len' passed too many arguments");
+  LASSERT(a, a->cell[0]->type == LVAL_QEXPR, "Function 'len' passed incorrect types");
+  LASSERT(a, a->cell[0]->count != 0, "Function 'head' passed {}");
+
+  lval* len = lval_len(lval_pop(a, 0));
+
+  lval_del(a);
+
+  return len;
+}
+
 lval* builtin_op(lval* a, char* op) {
   for (int i = 0; i < a->count; i++) {
     if (a->cell[i]->type != LVAL_NUM) {
@@ -273,8 +306,8 @@ lval* builtin_join(lval* a) {
 lval* builtin_cons(lval* a) {
   LASSERT(a, a->count == 2, "Function 'cons' passed incorrect number of arguments");
 
-  lval* x = lval_pop(a, 0);
-  lval* y = lval_pop(a, 0);
+  lval* x = lval_take(a, 0);
+  lval* y = lval_take(a, 1);
 
   LASSERT(x, x->type == LVAL_NUM, "Function 'cons' passed incorrect type");
   LASSERT(y, y->type == LVAL_QEXPR, "Function 'cons' passed incorrect type");
@@ -282,6 +315,9 @@ lval* builtin_cons(lval* a) {
   lval* list = lval_qexpr();
   list = lval_add(list, x);
   list = lval_join(list, y);
+
+  lval_del(x);
+  lval_del(y);
 
   return list;
 }
@@ -305,6 +341,7 @@ lval* builtin(lval* a, char* func) {
   if (strcmp("eval", func) == 0) { return builtin_eval(a); }
   if (strcmp("join", func) == 0) { return builtin_join(a); }
   if (strcmp("cons", func) == 0) { return builtin_cons(a); }
+  if (strcmp("len", func) == 0) { return builtin_len(a); }
   if (strstr("+-/*%^", func)) { return builtin_op(a, func); }
 
   lval_del(a);
@@ -329,9 +366,15 @@ lval* lval_read(mpc_ast_t* t) {
 
   lval* v = NULL;
 
-  if (strcmp(t->tag, ">") == 0) { v = lval_sexpr(); }
-  if (strstr(t->tag, "sexpr")) { v = lval_sexpr(); }
-  if (strstr(t->tag, "qexpr")) { v = lval_qexpr(); }
+  if (strcmp(t->tag, ">") == 0) { 
+    v = lval_sexpr();
+  } else if (strstr(t->tag, "sexpr")) {
+    v = lval_sexpr();
+  } else if (strstr(t->tag, "qexpr")) {
+    v = lval_qexpr(); 
+  } else {
+    v = lval_err("idfk");
+  }
 
   for (int i = 0; i < t->children_num; i++) {
     if (strcmp(t->children[i]->contents, "(") == 0) { continue; }
@@ -417,7 +460,7 @@ int main(int argc, char** argv) {
     "                                                                         \
       number    : /-?[0-9]+/ ;                                                \
       symbol    : \"list\" | \"head\" | \"tail\" | \"join\"                   \
-                | \"eval\" | \"cons\"                                         \
+                | \"eval\" | \"cons\" | \"len\"                               \
                 | '+' | '-' | '*' | '/' | '%' | '^' ;                         \
       sexpr     : '(' <expr>* ')' ;                                           \
       qexpr     : '{' <expr>* '}' ;                                           \
