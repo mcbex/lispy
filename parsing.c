@@ -322,11 +322,28 @@ lval* builtin_cons(lval* a) {
   return list;
 }
 
+lval* builtin_init(lval* a) {
+  LASSERT(a, a->count == 1, "Function 'eval' passed too many arguments");
+  LASSERT(a, a->cell[0]->type == LVAL_QEXPR, "Function 'eval' passed incorrect type");
+
+  lval* b = lval_pop(a, 0);
+  lval* c = lval_qexpr();
+
+  while (b->count > 1) {
+    c = lval_add(c, lval_pop(b, 0));
+  }
+
+  lval_del(a);
+  lval_del(b);
+
+  return c;
+}
+
 lval* lval_eval(lval* v);
 
 lval* builtin_eval(lval* a) {
   LASSERT(a, a->count == 1, "Function 'eval' passed too many arguments");
-  LASSERT(a, a->cell[0]->type == LVAL_QEXPR, "Function 'eval' passed incorrect types");
+  LASSERT(a, a->cell[0]->type == LVAL_QEXPR, "Function 'eval' passed incorrect type");
 
   lval* x = lval_take(a, 0);
   x->type = LVAL_SEXPR;
@@ -340,8 +357,9 @@ lval* builtin(lval* a, char* func) {
   if (strcmp("list", func) == 0) { return builtin_list(a); }
   if (strcmp("eval", func) == 0) { return builtin_eval(a); }
   if (strcmp("join", func) == 0) { return builtin_join(a); }
-  if (strcmp("cons", func) == 0) { return builtin_cons(a); }
   if (strcmp("len", func) == 0) { return builtin_len(a); }
+  if (strcmp("cons", func) == 0) { return builtin_cons(a); }
+  if (strcmp("init", func) == 0) { return builtin_init(a); }
   if (strstr("+-/*%^", func)) { return builtin_op(a, func); }
 
   lval_del(a);
@@ -460,7 +478,7 @@ int main(int argc, char** argv) {
     "                                                                         \
       number    : /-?[0-9]+/ ;                                                \
       symbol    : \"list\" | \"head\" | \"tail\" | \"join\"                   \
-                | \"eval\" | \"cons\" | \"len\"                               \
+                | \"eval\" | \"cons\" | \"init\" | \"len\"                    \
                 | '+' | '-' | '*' | '/' | '%' | '^' ;                         \
       sexpr     : '(' <expr>* ')' ;                                           \
       qexpr     : '{' <expr>* '}' ;                                           \
