@@ -423,24 +423,6 @@ lval* builtin_eval(lenv* e, lval* a) {
   return lval_eval(e, x);
 }
 
-/*
-lval* builtin(lval* a, char* func) {
-  if (strcmp("head", func) == 0) { return builtin_head(a); }
-  if (strcmp("tail", func) == 0) { return builtin_tail(a); }
-  if (strcmp("list", func) == 0) { return builtin_list(a); }
-  if (strcmp("eval", func) == 0) { return builtin_eval(a); }
-  if (strcmp("join", func) == 0) { return builtin_join(a); }
-  if (strcmp("len", func) == 0) { return builtin_len(a); }
-  if (strcmp("cons", func) == 0) { return builtin_cons(a); }
-  if (strcmp("init", func) == 0) { return builtin_init(a); }
-  if (strstr("+-/*%^", func)) { return builtin_op(a, func); }
-
-  lval_del(a);
-
-  return lval_err("Unknown function");
-}
-*/
-
 lval* lval_read_num(mpc_ast_t* t) {
   errno = 0;
   long x = strtol(t->contents, NULL, 10);
@@ -615,9 +597,7 @@ int main(int argc, char** argv) {
   mpca_lang(MPCA_LANG_DEFAULT,
     "                                                                         \
       number    : /-?[0-9]+/ ;                                                \
-      symbol    : \"list\" | \"head\" | \"tail\" | \"join\"                   \
-                | \"eval\" | \"cons\" | \"init\" | \"len\"                    \
-                | '+' | '-' | '*' | '/' | '%' | '^' ;                         \
+      symbol    : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ;                          \
       sexpr     : '(' <expr>* ')' ;                                           \
       qexpr     : '{' <expr>* '}' ;                                           \
       expr      : <number> | <symbol> | <sexpr> | <qexpr> ;                   \
