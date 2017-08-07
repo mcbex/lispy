@@ -101,10 +101,10 @@ lval* lval_err(char* fmt, ...) {
   va_start(va, fmt);
 
   v->err = malloc(512);
-  
+
   vsnprintf(v->err, 511, fmt, va);
 
-  v->err = realloc(v->err, strlen(v->err + 1));
+  v->err = realloc(v->err, strlen(v->err) + 1);
 
   va_end(va);
 
@@ -416,18 +416,18 @@ lval* builtin_join(lenv* e, lval* a) {
 lval* builtin_cons(lenv* e, lval* a) {
   LASSERT_ARGS(a, 2, "cons");
 
+  // TODO hmm only works with number? that can't be right
+  LASSERT_TYPE(a, a->cell[0]->type, LVAL_NUM, "cons");
+  LASSERT_TYPE(a, a->cell[1]->type, LVAL_QEXPR, "cons");
+
   lval* x = lval_pop(a, 0);
   lval* y = lval_pop(a, 0);
 
-  // TODO hmm only works with number? that can't be right
-  LASSERT_TYPE(x, x->type, LVAL_NUM, "cons");
-  LASSERT_TYPE(y, y->type, LVAL_QEXPR, "cons");
+  lval_del(a);
 
   lval* list = lval_qexpr();
   list = lval_add(list, x);
   list = lval_join(list, y);
-
-  lval_del(a);
 
   return list;
 }
