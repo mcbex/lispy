@@ -170,8 +170,6 @@ void lval_fun_print(lenv* e, lval* v) {
   for (int i = 0; i < e->count; i++) {
     if (e->vals[i]->fun == v->fun) {
       printf("<function> %s", e->syms[i]);
-
-      break;
     }
   }
 }
@@ -188,6 +186,14 @@ void lval_print(lenv* e, lval* v) {
 }
 
 void lval_println(lenv* e, lval* v) { lval_print(e, v); putchar('\n'); }
+
+void lval_print_env(lenv* e) {
+  for (int i = 0; i < e->count; i++) {
+    printf("%s = ", e->syms[i]);
+    lval_print(e, e->vals[i]);
+    printf("\n");
+  }
+}
 
 void lval_del(lval* v) {
   switch (v->type) {
@@ -479,6 +485,12 @@ lval* builtin_eval(lenv* e, lval* a) {
 
 lval* builtin_def(lenv* e, lval* a);
 
+lval* builtin_printEnv(lenv* e, lval* a) {
+  lval_print_env(e);
+
+  return lval_sexpr();
+}
+
 lval* lval_read_num(mpc_ast_t* t) {
   errno = 0;
   long x = strtol(t->contents, NULL, 10);
@@ -623,6 +635,9 @@ void lenv_add_builtins(lenv* e) {
   lenv_add_builtin(e, "init", builtin_init);
   lenv_add_builtin(e, "len", builtin_len);
   lenv_add_builtin(e, "def", builtin_def);
+  // should probably do this a different way cause there is no need
+  // for second variable... idk
+  lenv_add_builtin(e, "printEnv", builtin_printEnv);
 }
 
 lval* lval_eval(lenv* e, lval* v) {
