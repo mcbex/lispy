@@ -52,7 +52,12 @@ void add_history(char* unused) {}
     name);
 
 struct lval;
-struct lenv;
+struct lenv {
+  int count;
+  char** syms;
+  struct lval** vals;
+};
+
 typedef struct lval lval;
 typedef struct lenv lenv;
 
@@ -147,12 +152,12 @@ lval* lval_fun(lbuiltin func) {
   return v;
 }
 
-void lval_print(lval* v);
+void lval_print(lenv* e, lval* v);
 
-void lval_expr_print(lval* v, char open, char close) {
+void lval_expr_print(lenv* e, lval* v, char open, char close) {
   putchar(open);
   for (int i = 0; i < v->count; i++) {
-    lval_print(v->cell[i]);
+    lval_print(e, v->cell[i]);
 
     if (i != (v->count - 1)) {
       putchar(' ');
@@ -161,18 +166,28 @@ void lval_expr_print(lval* v, char open, char close) {
   putchar(close);
 }
 
-void lval_print(lval* v) {
+void lval_fun_print(lenv* e, lval* v) {
+  for (int i = 0; i < e->count; i++) {
+    if (e->vals[i]->fun == v->fun) {
+      printf("<function> %s", e->syms[i]);
+
+      break;
+    }
+  }
+}
+
+void lval_print(lenv* e, lval* v) {
   switch (v->type) {
     case LVAL_NUM: printf("%li", v->num); break;
     case LVAL_ERR: printf("Error: %s", v->err); break;
     case LVAL_SYM: printf("%s", v->sym); break;
-    case LVAL_SEXPR: lval_expr_print(v, '(', ')'); break;
-    case LVAL_QEXPR: lval_expr_print(v, '{', '}'); break;
-    case LVAL_FUN: printf("<function>"); break;
+    case LVAL_SEXPR: lval_expr_print(e, v, '(', ')'); break;
+    case LVAL_QEXPR: lval_expr_print(e, v, '{', '}'); break;
+    case LVAL_FUN: lval_fun_print(e, v); break;
   }
 }
 
-void lval_println(lval* v) { lval_print(v); putchar('\n'); }
+void lval_println(lenv* e, lval* v) { lval_print(e, v); putchar('\n'); }
 
 void lval_del(lval* v) {
   switch (v->type) {
@@ -533,12 +548,6 @@ lval* lval_eval_sexpr(lenv* e, lval* v) {
   return result;
 }
 
-struct lenv {
-  int count;
-  char** syms;
-  lval** vals;
-};
-
 lenv* lenv_new(void) {
   lenv* e = malloc(sizeof(lenv));
   e->count = 0;
@@ -692,7 +701,7 @@ int main(int argc, char** argv) {
       // success?
 
       lval* result = lval_eval(e, lval_read(r.output));
-      lval_println(result);
+      lval_println(e, result);
       lval_del(result);
 
 //      mpc_ast_print(r.output);
