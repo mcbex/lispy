@@ -168,6 +168,10 @@ void lval_expr_print(lenv* e, lval* v, char open, char close) {
 
 void lval_fun_print(lenv* e, lval* v) {
   for (int i = 0; i < e->count; i++) {
+    if (e->vals[i]->type != LVAL_FUN) {
+      continue;
+    }
+
     if (e->vals[i]->fun == v->fun) {
       printf("<function> %s", e->syms[i]);
     }
