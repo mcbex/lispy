@@ -700,7 +700,7 @@ int main(int argc, char** argv) {
     ",
     Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
 
-  puts("Lispy Version 0.0.0.0.1");
+  puts("Lispy Version 0.0.1");
   puts("Press Ctrl+c to Exit\n");
 
   lenv* e = lenv_new();
@@ -716,7 +716,6 @@ int main(int argc, char** argv) {
     mpc_result_t r;
     if (mpc_parse("<stdin>", input, Lispy, &r)) {
       // success?
-
       lval* result = lval_eval(e, lval_read(r.output));
       lval_println(e, result);
       lval_del(result);
