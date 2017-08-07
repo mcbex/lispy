@@ -488,6 +488,8 @@ lval* builtin_def(lenv* e, lval* a);
 lval* builtin_printEnv(lenv* e, lval* a) {
   lval_print_env(e);
 
+  lval_del(a);
+
   return lval_sexpr();
 }
 
